@@ -1,0 +1,11 @@
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Python compiled files
+**/__pycache__
+*.pyc
+
+# temporary code
+# testy/temp*.py
+temp/
