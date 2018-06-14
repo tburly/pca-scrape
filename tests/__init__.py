@@ -1,0 +1,8 @@
+"""
+
+    tests
+    ~~~~~~
+
+    Testing package.
+
+"""
