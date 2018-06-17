@@ -56,16 +56,17 @@ class Parser:
         """Check if currently processed page isn't empty."""
         pass
 
-    def validate_lab(self, expiredate_str):
-        """Validate current lab based on the listed expire date of its certificate."""
-        day, month, year = [int(d) for d in expiredate_str.split("-")]
-        expiredate = datetime.date(year, month, day)
-        return expiredate >= datetime.date.today()
-
     def parse_expiredate(self):
         """Parse the expire date."""
         prefix = "Data ważności certyfikatu:"
         for line in self.contents.split("\n"):
             if prefix in line:
+                if line.split(prefix)[1].strip() == "</strong> </p>":
+                    raise ValueError("No expire date found in the contents of the processed page.")
                 return line.split("</strong>")[-1].lstrip()[:-5]
-        raise ValueError("No expire date found on the processed page.")
+
+    def validate_lab(self, expiredate_str):
+        """Validate current lab based on the listed expire date of its certificate."""
+        day, month, year = [int(d) for d in expiredate_str.split("-")]
+        expiredate = datetime.date(year, month, day)
+        return expiredate > datetime.date.today()
