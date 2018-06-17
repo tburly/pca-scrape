@@ -44,7 +44,7 @@ class TestURLBuilder(unittest.TestCase):
         url = "https://www.pca.gov.pl/akredytowane-podmioty/akredytacje-aktywne/laboratoria-badawcze/AB%201578,podmiot.html"
         self.assertEqual([url for url in itertools.islice(builder.urls, number, number + 1)][0], url)
 
-
+# TODO: poprawić względem zmian w klasie testowanej
 class TestParser(unittest.TestCase):
     """Test case for class 'pca.scraper.Parser"""
 
