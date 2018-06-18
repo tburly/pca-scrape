@@ -29,7 +29,8 @@ class Lab:
 
     """Container for parsed data."""
 
-    def __init__(self, number, certdate, org_name, org_address, lab_name, lab_address, phone, cellphone, email, www, research_fields, research_objects):
+    def __init__(self, number, certdate, org_name, org_address, lab_name, lab_address, phone,
+                 cellphone, email, www, research_fields, research_objects):
         self.number = number
         self.certdate = certdate
         self.org_name = org_name
@@ -44,21 +45,21 @@ class Lab:
         self.research_objects = research_objects
 
 
-class Parser:
+class PageParser:
 
-    """Parses data."""
+    """Parse page at given URL."""
 
     def __init__(self, number, url):
         self.number = number
         self.contents = requests.get(url).text
 
-    def is_empty(self, line):
+    def is_empty(self, line, prefix):
         """Check if currently processed page isn't empty."""
         if line.split(prefix)[1].strip() == "</strong> </p>":
             return True
         return False
 
-    def parse_expiredate(self, line):
+    def parse_expiredate(self, line, prefix):
         """Parse expire date."""
         if line.split(prefix)[1].strip() == "</strong> </p>":
             raise ValueError("No expire date found in the contents of the processed page.")
@@ -70,7 +71,7 @@ class Parser:
         expiredate = datetime.date(year, month, day)
         return expiredate > datetime.date.today()
 
-    def parse_certdate(self, line):
+    def parse_certdate(self, line, prefix):
         """Parse first certification date."""
         if line.split(prefix)[1].strip() == "</strong> </p>":
             raise ValueError("No expire date found in the contents of the processed page.")
@@ -104,10 +105,10 @@ class Parser:
         return line.split("</li>")[0].strip()
 
     def parse_contents(self):
-        """Parse contents of the processed page."""
+        """Parse contents of processed page."""
         # sentinels
         certdate = None
-        org_name, org_address, lab_name, lab_address = None, None, None, None, None
+        org_name, org_address, lab_name, lab_address = None, None, None, None
         phone, cellphone, email, www = None, None, None, None
         research_fields, research_objects = None, None
         # flags to control parsing on the line after the one that triggers parsing
@@ -118,14 +119,14 @@ class Parser:
 
         for line in self.contents.split("\n"):
             if "Akredytacja:" in line:
-                if self.is_empty(line):
+                if self.is_empty(line, "Akredytacja:"):
                     return None
             elif "Data ważności certyfikatu:" in line:
-                expiredate_str = self.parse_expiredate(line)
+                expiredate_str = self.parse_expiredate(line, "Data ważności certyfikatu:")
                 if not self.validate_lab(expiredate_str):
                     return None
             elif "Akredytacja od:" in line:
-                certdate = self.parse_certdate(line)
+                certdate = self.parse_certdate(line, "Akredytacja od:")
 
             elif "Dane organizacji:" in line:
                 org_name_on = True
@@ -184,7 +185,10 @@ class Parser:
                 research_objects_on = False
                 break
 
-        if any([True for var in [certdate, org_name, org_address, lab_name, lab_address, phone, cellphone, email, www, research_fields, research_objects] if var is None]):
+        if any([True for var in [certdate, org_name, org_address, lab_name, lab_address, phone,
+                                 cellphone, email, www, research_fields, research_objects]
+                if var is None]):
             raise ValueError("The processed page is not parsable.")
 
-        return Lab(self.number, certdate, org_name, org_address, lab_name, lab_address, phone, cellphone, email, www, research_fields, research_objects)
+        return Lab(self.number, certdate, org_name, org_address, lab_name, lab_address, phone,
+                   cellphone, email, www, research_fields, research_objects)
