@@ -44,9 +44,10 @@ class TestURLBuilder(unittest.TestCase):
         url = "https://www.pca.gov.pl/akredytowane-podmioty/akredytacje-aktywne/laboratoria-badawcze/AB%201578,podmiot.html"
         self.assertEqual([url for url in itertools.islice(builder.urls, number, number + 1)][0], url)
 
-# TODO: poprawić względem zmian w klasie testowanej
+
 class TestParser(unittest.TestCase):
     """Test case for class 'pca.scraper.Parser"""
+    # TODO: poprawić względem zmian w klasie testowanej
 
     def setUp(self):
         self.number = 1527
@@ -62,7 +63,9 @@ class TestParser(unittest.TestCase):
         self.assertEqual(self.parser.parse_expiredate(), expiredate)
 
     def test_parse_expiredate_improper_page(self):
-        """Does parsing an improper page (based on number greater than the number of existing acredited laboratories) raises a ValueError?"""
+        """
+        Does parsing an improper page (based on number greater than the number of existing acredited laboratories) raises a ValueError?
+        """
         imp_number = 5527
         imp_url = "https://www.pca.gov.pl/akredytowane-podmioty/akredytacje-aktywne/laboratoria-badawcze/AB%205527,podmiot.html"
         imp_parser = Parser(imp_number, imp_url)
@@ -70,21 +73,21 @@ class TestParser(unittest.TestCase):
             imp_parser.parse_expiredate()
 
     def test_validate_lab_date_later_than_today(self):
-        """Does expire date greater than today validates the processed lab?"""
+        """Does expire date greater than today validates processed lab?"""
         expiredate = self.today + self.timedelta
         year, month, day = str(expiredate).split("-")
         expiredate_str = "-".join([day, month, year])
         self.assertTrue(self.parser.validate_lab(expiredate_str))
 
     def test_validate_lab_date_equal_today(self):
-        """Does expire date equal to today validates the processed lab?"""
+        """Does expire date equal to today validates processed lab?"""
         expiredate = self.today
         year, month, day = str(expiredate).split("-")
         expiredate_str = "-".join([day, month, year])
         self.assertFalse(self.parser.validate_lab(expiredate_str))
 
     def test_validate_lab_date_lesser_than_today(self):
-        """Does expire date lesser than today validates the processed lab?"""
+        """Does expire date lesser than today validates processed lab?"""
         expiredate = self.today - self.timedelta
         year, month, day = str(expiredate).split("-")
         expiredate_str = "-".join([day, month, year])
