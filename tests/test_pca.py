@@ -11,7 +11,7 @@ import unittest
 import itertools
 import datetime
 
-from pca.scraper import URLBuilder, Parser
+from pca.scraper import URLBuilder, PageParser
 
 
 class TestURLBuilder(unittest.TestCase):
@@ -45,32 +45,31 @@ class TestURLBuilder(unittest.TestCase):
         self.assertEqual([url for url in itertools.islice(builder.urls, number, number + 1)][0], url)
 
 
-class TestParser(unittest.TestCase):
-    """Test case for class 'pca.scraper.Parser"""
+class TestPageParser(unittest.TestCase):
+    """Test case for class 'pca.scraper.PageParser"""
     # TODO: poprawić względem zmian w klasie testowanej
 
     def setUp(self):
         self.number = 1527
         self.url = "https://www.pca.gov.pl/akredytowane-podmioty/akredytacje-aktywne/laboratoria-badawcze/AB%201527,podmiot.html"
-        self.parser = Parser(self.number, self.url)
+        self.parser = PageParser(self.number, self.url)
 
         self.today = datetime.date.today()
         self.timedelta = datetime.timedelta(days=100)
 
-    def test_parse_expiredate_proper_page(self):
-        """Does parsing a proper page returns proper expire date string?"""
+    def test_parse_expiredate(self):
+        """Does parsing proper line returns proper expire date string?"""
+        line = "               <p><strong>Data ważności certyfikatu:</strong> 03-08-2018</p>"
         expiredate = "03-08-2018"
-        self.assertEqual(self.parser.parse_expiredate(), expiredate)
+        self.assertEqual(self.parser.parse_expiredate(line, "Data ważności certyfikatu:"), expiredate)
 
-    def test_parse_expiredate_improper_page(self):
+    def test_parse_expiredate_line_from_blank_page(self):
         """
-        Does parsing an improper page (based on number greater than the number of existing acredited laboratories) raises a ValueError?
+        Does parsing line from a blank page (with URL based on a number greater than the number of existing acredited laboratories) raises a ValueError?
         """
-        imp_number = 5527
-        imp_url = "https://www.pca.gov.pl/akredytowane-podmioty/akredytacje-aktywne/laboratoria-badawcze/AB%205527,podmiot.html"
-        imp_parser = Parser(imp_number, imp_url)
+        line = "                <p><strong>Data ważności certyfikatu:</strong> </p>"
         with self.assertRaises(ValueError):
-            imp_parser.parse_expiredate()
+            self.parser.parse_expiredate(line, "Data ważności certyfikatu:")
 
     def test_validate_lab_date_later_than_today(self):
         """Does expire date greater than today validates processed lab?"""

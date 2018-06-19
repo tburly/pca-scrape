@@ -61,9 +61,12 @@ class PageParser:
 
     def parse_expiredate(self, line, prefix):
         """Parse expire date."""
-        if line.split(prefix)[1].strip() == "</strong> </p>":
+        line = line.split(prefix)[1].strip()
+        if line == "</strong> </p>":
             raise ValueError("No expire date found in the contents of the processed page.")
-        return line.split("</strong>")[-1].lstrip()[:-5]
+        line = line.replace("</strong>", "")
+        line = line.replace("</p>", "")
+        return line.strip()
 
     def validate_lab(self, expiredate_str):
         """Validate current lab based on expire date of its certificate."""
