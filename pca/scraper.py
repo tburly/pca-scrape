@@ -26,32 +26,12 @@ class URLBuilder:
         self.urls = (self.BASEURL_PREFIX + (str(i).zfill(3) if i < 1000 else str(i)) + self.BASEURL_SUFFIX for i in itertools.count())
 
 
-class Lab:
-
-    """Container for parsed data."""
-
-    def __init__(self, number, certdate, org_name, org_address, lab_name, lab_address, phone,
-                 cellphone, email, www, research_fields, research_objects):
-        self.number = number
-        self.certdate = certdate
-        self.org_name = org_name
-        self.org_address = org_address
-        self.lab_name = lab_name
-        self.lab_address = lab_address
-        self.phone = phone
-        self.cellphone = cellphone
-        self.email = email
-        self.www = www
-        self.research_fields = research_fields
-        self.research_objects = research_objects
-
-
 class PageParser:
 
     """Parse page at given URL."""
 
     def __init__(self, number, url):
-        self.number = number
+        self.number = "AB " + str(number).zfill(3)
         self.contents = requests.get(url).text
 
     def is_empty(self, line, pattern):
@@ -207,5 +187,17 @@ class PageParser:
                 if var is None]):
             raise ValueError("The processed page is not parsable.")
 
-        return Lab(self.number, certdate, org_name, org_address, lab_name, lab_address, phone,
-                   cellphone, email, www, research_fields, research_objects)
+        return {
+            "number": self.number,
+            "certdate": certdate,
+            "org_name": org_name,
+            "org_address": org_address,
+            "lab_name": lab_name,
+            "lab_address": lab_address,
+            "phone": phone,
+            "cellphone": cellphone,
+            "email": email,
+            "www": www,
+            "research_fields": research_fields,
+            "research_objects": research_objects
+        }
