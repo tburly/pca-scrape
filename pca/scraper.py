@@ -12,6 +12,7 @@ import datetime
 import time
 import json
 import itertools
+import re
 
 
 class URLBuilder:
@@ -53,20 +54,23 @@ class PageParser:
         self.number = number
         self.contents = requests.get(url).text
 
-    def is_empty(self, line, prefix):
+    def is_empty(self, line, pattern):
         """Check if currently processed page isn't empty."""
-        if line.split(prefix)[1].strip() == "</strong> </p>":
+        if line.split(pattern)[1] == "</strong> </p>":
             return True
         return False
 
-    def parse_expiredate(self, line, prefix):
-        """Parse expire date."""
-        line = line.split(prefix)[1].strip()
-        if line == "</strong> </p>":
-            raise ValueError("No expire date found in the contents of the processed page.")
-        line = line.replace("</strong>", "")
-        line = line.replace("</p>", "")
+    def lose_cruft(self, line, pattern):
+        """Strip line of unwanted characters."""
+        line = line.split(pattern)[1]
+        line = line.replace("</strong>", "").replace("</p>", "")
         return line.strip()
+
+    def parse_expiredate(self, line, pattern):
+        """Parse expire date."""
+        if self.is_empty(line, pattern):
+            raise ValueError("No expire date found in the contents of the processed page.")
+        return self.lose_cruft(line, pattern)
 
     def validate_lab(self, expiredate_str):
         """Validate current lab based on expire date of its certificate."""
@@ -74,11 +78,12 @@ class PageParser:
         expiredate = datetime.date(year, month, day)
         return expiredate > datetime.date.today()
 
-    def parse_certdate(self, line, prefix):
+    def parse_certdate(self, line, pattern):
         """Parse first certification date."""
-        if line.split(prefix)[1].strip() == "</strong> </p>":
+        if self.is_empty(line, pattern):
             raise ValueError("No expire date found in the contents of the processed page.")
-        certdate = line.split("</strong>")[-1].lstrip()[:-5]
+        # certdate = line.split("</strong>")[-1].lstrip()[:-5]
+        certdate = self.lose_cruft(line, pattern)
         day, month, year = certdate.split("-")
         return "-".join([year, month, day])
 
@@ -89,13 +94,11 @@ class PageParser:
 
     def parse_phone(self, line):
         """Parse phone."""
-        phone = []
-        for char in line:
-            if char == "w":
-                break
-            if char == "-" or char.isdigit():
-                phone.append(char)
-        return "".join(phone)
+        regex = r"(?:\(?\+?48)?(?:[-\.\(\)\s]*\d){9}\)?"  # matches both cellphone and landline formats with optional prefix '(+48)'
+        match = re.search(regex, line)
+        if match is None:
+            raise ValueError("Phone number information cannot be parsed.")
+        return match.group()
 
     def parse_email_www(self, line):
         """Parse email or website address."""
@@ -121,6 +124,8 @@ class PageParser:
         research_fields_on, research_objects_on = False, False
 
         for line in self.contents.split("\n"):
+            line = line.strip()
+
             if "Akredytacja:" in line:
                 if self.is_empty(line, "Akredytacja:"):
                     return None
@@ -133,27 +138,32 @@ class PageParser:
 
             elif "Dane organizacji:" in line:
                 org_name_on = True
+                continue
             elif org_name_on:
                 org_name = self.parse_name_address(line)
                 org_name_on = False
                 org_address_on = True
+                continue
             elif org_address_on:
                 org_address = self.parse_name_address(line)
                 org_address_on = False
 
             elif "Dane laboratorium:" in line:
                 lab_name_on = True
+                continue
             elif lab_name_on:
                 lab_name = self.parse_name_address(line)
                 lab_name_on = False
                 lab_address_on = True
+                continue
             elif lab_address_on:
                 lab_address = self.parse_name_address(line)
                 lab_address_on = False
 
             elif "Telefon:" in line:
                 phone_on = True
-            elif lab_name_on:
+                continue
+            elif phone_on:
                 phone = self.parse_phone(line)
                 phone_on = False
 
@@ -162,12 +172,14 @@ class PageParser:
 
             elif "Email:" in line:
                 email_on = True
+                continue
             elif email_on:
                 email = self.parse_email_www(line)
                 email_on = False
 
             elif "www:" in line:
                 www_on = True
+                continue
             elif www_on:
                 www = self.parse_email_www(line)
                 www_on = False
@@ -175,6 +187,7 @@ class PageParser:
             elif "Dziedziny badań:" in line:
                 research_fields_on = True
                 research_fields = []
+                continue
             elif research_fields_on and "<li>" in line:
                 research_fields.append(self.parse_research_field_object(line))
 
@@ -182,6 +195,7 @@ class PageParser:
                 research_fields_on = False
                 research_objects_on = True
                 research_objects = []
+                continue
             elif research_objects_on and "<li>" in line:
                 research_objects.append(self.parse_research_field_object(line))
             elif research_objects_on and "</ul>" in line:

@@ -53,23 +53,37 @@ class TestPageParser(unittest.TestCase):
         self.number = 1527
         self.url = "https://www.pca.gov.pl/akredytowane-podmioty/akredytacje-aktywne/laboratoria-badawcze/AB%201527,podmiot.html"
         self.parser = PageParser(self.number, self.url)
+        self.pattern = "Data ważności certyfikatu:"
 
         self.today = datetime.date.today()
         self.timedelta = datetime.timedelta(days=100)
 
-    def test_parse_expiredate(self):
-        """Does parsing proper line returns proper expire date string?"""
-        line = "               <p><strong>Data ważności certyfikatu:</strong> 03-08-2018</p>"
-        expiredate = "03-08-2018"
-        self.assertEqual(self.parser.parse_expiredate(line, "Data ważności certyfikatu:"), expiredate)
+    def test_is_empty_with_empty(self):
+        """Does passing a line with no information to parse return 'True'?"""
+        line = "<p><strong>Data ważności certyfikatu:</strong> </p>"
+        self.assertTrue(self.parser.is_empty(line, self.pattern))
 
-    def test_parse_expiredate_line_from_blank_page(self):
-        """
-        Does parsing line from a blank page (with URL based on a number greater than the number of existing acredited laboratories) raises a ValueError?
-        """
-        line = "                <p><strong>Data ważności certyfikatu:</strong> </p>"
+    def test_is_empty_with_not_empty(self):
+        """Does passing a line with some valid information to parse return 'False'?"""
+        line = "<p><strong>Data ważności certyfikatu:</strong> 03-08-2018</p>"
+        self.assertFalse(self.parser.is_empty(line, self.pattern))
+
+    def test_lose_cruft(self):
+        """Does valid line get stripped of unwanted characters?"""
+        line = "<p><strong>Data ważności certyfikatu:</strong> 03-08-2018</p>"
+        self.assertEqual(self.parser.lose_cruft(line, self.pattern), "03-08-2018")
+
+    def test_parse_expiredate(self):
+        """Does parsing valid line return proper expire date string?"""
+        line = "<p><strong>Data ważności certyfikatu:</strong> 03-08-2018</p>"
+        expiredate = "03-08-2018"
+        self.assertEqual(self.parser.parse_expiredate(line, self.pattern), expiredate)
+
+    def test_parse_expiredate_with_empty(self):
+        """Does line with no information to parse raise a 'ValueError'?"""
+        line = "<p><strong>Data ważności certyfikatu:</strong> </p>"
         with self.assertRaises(ValueError):
-            self.parser.parse_expiredate(line, "Data ważności certyfikatu:")
+            self.parser.parse_expiredate(line, self.pattern)
 
     def test_validate_lab_date_later_than_today(self):
         """Does expire date greater than today validates processed lab?"""
@@ -91,3 +105,55 @@ class TestPageParser(unittest.TestCase):
         year, month, day = str(expiredate).split("-")
         expiredate_str = "-".join([day, month, year])
         self.assertFalse(self.parser.validate_lab(expiredate_str))
+
+    def test_parse_certdate(self):
+        """Does parsing valid line return proper certification date string?"""
+        line = "<p><strong>Akredytacja od:</strong> 04-08-2014</p>"
+        pattern = "Akredytacja od:"
+        certdate = "2014-08-04"
+        self.assertEqual(self.parser.parse_certdate(line, pattern), certdate)
+
+    def test_parse_certdate_with_empty(self):
+        """Does line with no information to parse raise a 'ValueError'?"""
+        line = "<p><strong>Akredytacja od:</strong> </p>"
+        pattern = "Akredytacja od:"
+        with self.assertRaises(ValueError):
+            self.parser.parse_certdate(line, pattern)
+
+    def test_parse_name_address(self):
+        """
+        Does line with valid information returns organization name/organization adress/lab name/lab address?
+        """
+        lines = [
+            "<p> Wojewódzki Inspektorat Weterynarii z/s w Krośnie </p>",
+            "<p> ul. Ściegiennego 6A; 38-400 Krosno </p>",
+            "<p> Zakład Higieny Weterynaryjnej w Krośnie </p>",
+            "<p> ul. Ściegiennego 6A; 38-400 Krosno </p>"
+        ]
+        names_addresses = [
+            "Wojewódzki Inspektorat Weterynarii z/s w Krośnie",
+            "ul. Ściegiennego 6A; 38-400 Krosno",
+            "Zakład Higieny Weterynaryjnej w Krośnie",
+            "ul. Ściegiennego 6A; 38-400 Krosno"
+        ]
+        for line, output in zip(lines, names_addresses):
+            with self.subTest(tested_line=line, expected_output=output):
+                self.assertEqual(self.parser.parse_name_address(line), output)
+
+    def test_parse_landline_phone(self):
+        """Does valid line returns a proper ladnline phone number?"""
+        line = "13 432-59-23                    wew.: brak              </p>"
+        landline = "13 432-59-23"
+        self.assertEqual(self.parser.parse_phone(line), landline)
+
+    def test_parse_cellphone(self):
+        """Does valid line returns a proper cellphone number?"""
+        line = "602-606-272                    wew.: brak              </p>"
+        landline = "602-606-272"
+        self.assertEqual(self.parser.parse_phone(line), landline)
+
+    def test_parse_phone_invalid_line(self):
+        """Does parsing invalid line raises 'ValueError'?"""
+        line = "432-59-23                    wew.: brak              </p>"
+        with self.assertRaises(ValueError):
+            self.parser.parse_phone(line)
