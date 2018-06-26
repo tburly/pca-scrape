@@ -47,7 +47,6 @@ class TestURLBuilder(unittest.TestCase):
 
 class TestPageParser(unittest.TestCase):
     """Test case for class 'pca.scraper.PageParser"""
-    # TODO: poprawić względem zmian w klasie testowanej
 
     def setUp(self):
         self.number = 1527
@@ -80,7 +79,7 @@ class TestPageParser(unittest.TestCase):
         self.assertEqual(self.parser.parse_expiredate(line, self.pattern), expiredate)
 
     def test_parse_expiredate_with_empty(self):
-        """Does line with no information to parse raise a 'ValueError'?"""
+        """Does parsing line with no information to parse raise a 'ValueError'?"""
         line = "<p><strong>Data ważności certyfikatu:</strong> </p>"
         with self.assertRaises(ValueError):
             self.parser.parse_expiredate(line, self.pattern)
@@ -114,7 +113,7 @@ class TestPageParser(unittest.TestCase):
         self.assertEqual(self.parser.parse_certdate(line, pattern), certdate)
 
     def test_parse_certdate_with_empty(self):
-        """Does line with no information to parse raise a 'ValueError'?"""
+        """Does parsing line with no information to parse raise a 'ValueError'?"""
         line = "<p><strong>Akredytacja od:</strong> </p>"
         pattern = "Akredytacja od:"
         with self.assertRaises(ValueError):
@@ -122,7 +121,7 @@ class TestPageParser(unittest.TestCase):
 
     def test_parse_name_address(self):
         """
-        Does line with valid information returns organization name/organization adress/lab name/lab address?
+        Does parsing line with valid information return organization name/organization adress/lab name/lab address?
         """
         lines = [
             "<p> Wojewódzki Inspektorat Weterynarii z/s w Krośnie </p>",
@@ -141,19 +140,44 @@ class TestPageParser(unittest.TestCase):
                 self.assertEqual(self.parser.parse_name_address(line), output)
 
     def test_parse_landline_phone(self):
-        """Does valid line returns a proper ladnline phone number?"""
+        """Does parsing valid line return a proper ladnline phone number?"""
         line = "13 432-59-23                    wew.: brak              </p>"
         landline = "13 432-59-23"
-        self.assertEqual(self.parser.parse_phone(line), landline)
+        self.assertEqual(self.parser.parse_contact_details(line, PageParser.PHONE_REGEX),
+                         landline)
 
     def test_parse_cellphone(self):
-        """Does valid line returns a proper cellphone number?"""
+        """Does parsing valid line return a proper cellphone number?"""
         line = "602-606-272                    wew.: brak              </p>"
         landline = "602-606-272"
-        self.assertEqual(self.parser.parse_phone(line), landline)
+        self.assertEqual(self.parser.parse_contact_details(line, PageParser.PHONE_REGEX),
+                         landline)
 
     def test_parse_phone_invalid_line(self):
-        """Does parsing invalid line raises 'ValueError'?"""
+        """Does parsing invalid line return empty string?"""
         line = "432-59-23                    wew.: brak              </p>"
-        with self.assertRaises(ValueError):
-            self.parser.parse_phone(line)
+        self.assertEqual(self.parser.parse_contact_details(line, PageParser.PHONE_REGEX), "")
+
+    def test_parse_email(self):
+        """Does parsing valid line return a proper email?"""
+        line = "                    zmyslmar@imp.lodz.pl               </p>"
+        email = "zmyslmar@imp.lodz.pl"
+        self.assertEqual(self.parser.parse_contact_details(line, PageParser.EMAIL_REGEX),
+                         email)
+
+    def test_parse_email_invalid_line(self):
+        """Does parsing invalid line return empty string?"""
+        line = "                   brak               </p>"
+        self.assertEqual(self.parser.parse_contact_details(line, PageParser.EMAIL_REGEX), "")
+
+    def test_parse_www(self):
+        """Does parsing valid line return a proper www address?"""
+        line = "                    www.imp.lodz.pl               </p>"
+        www = "www.imp.lodz.pl"
+        self.assertEqual(self.parser.parse_contact_details(line, PageParser.WWW_REGEX),
+                         www)
+
+    def test_parse_www_invalid_line(self):
+        """Does parsing invalid line return empty string?"""
+        line = "                                  </p>"
+        self.assertEqual(self.parser.parse_contact_details(line, PageParser.WWW_REGEX), "")

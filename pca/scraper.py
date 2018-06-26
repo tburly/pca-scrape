@@ -30,6 +30,10 @@ class PageParser:
 
     """Parse page at given URL."""
 
+    PHONE_REGEX = r"(?:\(?\+?48)?(?:[-\.\(\)\s]*\d){9}\)?"  # matches both cellphone and landline formats with optional prefix '(+48)'
+    EMAIL_REGEX = r"\b[\w\.%+-]+@(?:[\w\.-])+\.[a-zA-Z]{2,}\b"  # a simplified version that matches email in most popular (99% cases) form
+    WWW_REGEX = r"\b(?:[\w\.-])+\.[a-zA-Z]{2,}\b"
+
     def __init__(self, number, url):
         self.number = "AB " + str(number).zfill(3)
         self.contents = requests.get(url).text
@@ -61,8 +65,7 @@ class PageParser:
     def parse_certdate(self, line, pattern):
         """Parse first certification date."""
         if self.is_empty(line, pattern):
-            raise ValueError("No expire date found in the contents of the processed page.")
-        # certdate = line.split("</strong>")[-1].lstrip()[:-5]
+            raise ValueError("No certification date found in the contents of the processed page.")
         certdate = self.lose_cruft(line, pattern)
         day, month, year = certdate.split("-")
         return "-".join([year, month, day])
@@ -72,18 +75,12 @@ class PageParser:
         line = line.split("<p>")[1]
         return line.split("</p>")[0].strip()
 
-    def parse_phone(self, line):
-        """Parse phone."""
-        regex = r"(?:\(?\+?48)?(?:[-\.\(\)\s]*\d){9}\)?"  # matches both cellphone and landline formats with optional prefix '(+48)'
+    def parse_contact_details(self, line, regex):
+        """Parse contact details (landline phone, cellphone, email and www)."""
         match = re.search(regex, line)
         if match is None:
-            raise ValueError("Phone number information cannot be parsed.")
+            return ""
         return match.group()
-
-    def parse_email_www(self, line):
-        """Parse email or website address."""
-        line = line.split("</p>")[0]
-        return line.strip()
 
     def parse_research_field_object(self, line):
         """Parse one reasearch field/object."""
@@ -144,24 +141,24 @@ class PageParser:
                 phone_on = True
                 continue
             elif phone_on:
-                phone = self.parse_phone(line)
+                phone = self.parse_contact_details(line, self.PHONE_REGEX)
                 phone_on = False
 
             elif "Komórka:" in line:
-                cellphone = self.parse_phone(line)
+                cellphone = self.parse_contact_details(line, self.PHONE_REGEX)
 
             elif "Email:" in line:
                 email_on = True
                 continue
             elif email_on:
-                email = self.parse_email_www(line)
+                email = self.parse_contact_details(line, self.EMAIL_REGEX)
                 email_on = False
 
             elif "www:" in line:
                 www_on = True
                 continue
             elif www_on:
-                www = self.parse_email_www(line)
+                www = self.parse_contact_details(line, self.WWW_REGEX)
                 www_on = False
 
             elif "Dziedziny badań:" in line:
