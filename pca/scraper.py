@@ -93,7 +93,9 @@ class PageParser:
         certdate = None
         org_name, org_address, lab_name, lab_address = None, None, None, None
         phone, cellphone, email, www = None, None, None, None
-        research_fields, research_objects = None, None
+
+        research_fields, research_objects = "", ""  # default values in case these sections are missing on the parsed page
+
         # flags to control parsing on the line after the one that triggers parsing
         org_name_on, org_address_on = False, False
         lab_name_on, lab_address_on = False, False
@@ -180,7 +182,7 @@ class PageParser:
                 break
 
         if any([True for var in [certdate, org_name, org_address, lab_name, lab_address, phone,
-                                 cellphone, email, www, research_fields, research_objects]
+                                 cellphone, email, www]
                 if var is None]):
             raise ValueError("The processed page is not parsable.")
 

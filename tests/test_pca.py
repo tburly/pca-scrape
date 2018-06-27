@@ -49,9 +49,8 @@ class TestPageParser(unittest.TestCase):
     """Test case for class 'pca.scraper.PageParser"""
 
     def setUp(self):
-        self.number = 1527
-        self.url = "https://www.pca.gov.pl/akredytowane-podmioty/akredytacje-aktywne/laboratoria-badawcze/AB%201527,podmiot.html"
-        self.parser = PageParser(self.number, self.url)
+        url = "https://www.pca.gov.pl/akredytowane-podmioty/akredytacje-aktywne/laboratoria-badawcze/AB%201327,podmiot.html"
+        self.parser = PageParser(1327, url)
         self.pattern = "Data ważności certyfikatu:"
 
         self.today = datetime.date.today()
@@ -160,24 +159,124 @@ class TestPageParser(unittest.TestCase):
 
     def test_parse_email(self):
         """Does parsing valid line return a proper email?"""
-        line = "                    zmyslmar@imp.lodz.pl               </p>"
+        line = "zmyslmar@imp.lodz.pl               </p>"
         email = "zmyslmar@imp.lodz.pl"
         self.assertEqual(self.parser.parse_contact_details(line, PageParser.EMAIL_REGEX),
                          email)
 
     def test_parse_email_invalid_line(self):
         """Does parsing invalid line return empty string?"""
-        line = "                   brak               </p>"
+        line = "brak               </p>"
         self.assertEqual(self.parser.parse_contact_details(line, PageParser.EMAIL_REGEX), "")
 
     def test_parse_www(self):
         """Does parsing valid line return a proper www address?"""
-        line = "                    www.imp.lodz.pl               </p>"
+        line = "www.imp.lodz.pl               </p>"
         www = "www.imp.lodz.pl"
         self.assertEqual(self.parser.parse_contact_details(line, PageParser.WWW_REGEX),
                          www)
 
     def test_parse_www_invalid_line(self):
         """Does parsing invalid line return empty string?"""
-        line = "                                  </p>"
+        line = "</p>"
         self.assertEqual(self.parser.parse_contact_details(line, PageParser.WWW_REGEX), "")
+
+    def test_parse_research_field(self):
+        """Does parsing valid line return a proper research field?"""
+        line = "<li>Badania dotyczące inżynierii środowiska (środowiskowe i klimatyczne) (G)</li>"
+        research_field = "Badania dotyczące inżynierii środowiska (środowiskowe i klimatyczne) (G)"
+        self.assertEqual(self.parser.parse_research_field_object(line), research_field)
+
+    def test_parse_research_field_empty_line(self):
+        """Does parsing empty line return a an empty string?"""
+        line = "<li></li>"
+        self.assertEqual(self.parser.parse_research_field_object(line), "")
+
+    def test_parse_contents_no_cellphone_oneline_research_fields_and_objects(self):
+        """
+        Does parsing a valid page with:
+        - not empty certification date line,
+        - still valid certification,
+        - no cellphone,
+        - one line of research fields,
+        - one line of research objects
+        return a proper dict?
+        """
+        expected = {
+            "number": "AB 1327",
+            "certdate": "2012-04-03",
+            "org_name": "P.P.U.H. Badania Nieniszczące SONOBAD Andrzej Zadura",
+            "org_address": "Maszewo Duże, ul. Miła 8; 09-400 Płock",
+            "lab_name": "P.P.U.H. Badania Nieniszczące SONOBAD Andrzej Zadura",
+            "lab_address": "Maszewo Duże, ul. Miła 8; 09-400 Płock",
+            "phone": "24 266-78-75",
+            "cellphone": "",
+            "email": "sonobad@sonobad.pl",
+            "www": "www.sonobad.pl",
+            "research_fields": ["Badania nieniszczące (L)"],
+            "research_objects": ["Wyroby i materiały konstrukcyjne - w tym metale i kompozyty"]
+        }
+        self.assertEqual(self.parser.parse_contents(), expected)
+
+    def test_parse_contents_expired(self):
+        """Does parsing a valid page with expired certification returns 'None'"""
+        url = "https://www.pca.gov.pl/akredytowane-podmioty/akredytacje-aktywne/laboratoria-badawcze/AB%20555,podmiot.html"
+        parser = PageParser(555, url)
+        self.assertIs(parser.parse_contents(), None)
+
+    def test_parse_contents_no_cellphone_multiline_research_fields_and_objects(self):
+        """
+        Does parsing a valid page with:
+        - not empty certification date line,
+        - still valid certification,
+        - no cellphone,
+        - multiline research fields,
+        - multiline research objects
+        return a proper dict?
+        """
+        url = "https://www.pca.gov.pl/akredytowane-podmioty/akredytacje-aktywne/laboratoria-badawcze/AB%20333,podmiot.html"
+        parser = PageParser(333, url)
+        expected = {
+            "number": "AB 333",
+            "certdate": "2001-07-06",
+            "org_name": "Okręgowa Stacja Chemiczno-Rolnicza w Kielcach",
+            "org_address": "ul. Wapiennikowa 21; 25-112 Kielce",
+            "lab_name": "Dział Laboratoryjny",
+            "lab_address": "ul. Wapiennikowa 21; 25-112 Kielce",
+            "phone": "41 361-01-51",
+            "cellphone": "",
+            "email": "kielce@schr.gov.pl",
+            "www": "www.schr.gov.pl",
+            "research_fields": ["Badania chemiczne, analityka chemiczna (C)", "Badania właściwości fizycznych (N)"],
+            "research_objects": ["Produkty rolne - w tym pasze dla zwierząt", "Chemikalia, kosmetyki, wyroby chemiczne - w tym nawozy i farby", "Próbki środowiskowe, powietrze, woda, gleba, odpady, osady i ścieki"]
+        }
+        self.assertEqual(parser.parse_contents(), expected)
+
+    def test_parse_contents_no_cellphone_no_email_oneline_research_fields_and_objects(self):
+        """
+        Does parsing a valid page with:
+        - not empty certification date line,
+        - still valid certification,
+        - no cellphone,
+        - no email,
+        - one line of research fields,
+        - one line of research objects
+        return a proper dict?
+        """
+        url = "https://www.pca.gov.pl/akredytowane-podmioty/akredytacje-aktywne/laboratoria-badawcze/AB%20456,podmiot.html"
+        parser = PageParser(456, url)
+        expected = {
+            "number": "AB 456",
+            "certdate": "2004-02-12",
+            "org_name": "Instytut Metali Nieżelaznych",
+            "org_address": "ul. Sowińskiego 5; 44-100 Gliwice",
+            "lab_name": "Laboratorium Zaawansowanych Materiałów Magnetycznych",
+            "lab_address": "ul. Sowińskiego 5; 44-100 Gliwice",
+            "phone": "32 238-02-81",
+            "cellphone": "",
+            "email": "",
+            "www": "www.imn.gliwice.pl",
+            "research_fields": ["Badania właściwości fizycznych (N)"],
+            "research_objects": ["Wyroby i wyposażenie elektryczne, telekomunikacyjne i elektroniczne"]
+        }
+        self.assertEqual(parser.parse_contents(), expected)
