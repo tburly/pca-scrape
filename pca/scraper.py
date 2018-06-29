@@ -13,6 +13,9 @@ import time
 import json
 import itertools
 import re
+from pprint import pprint as pp
+
+CEILING = 1700  # on 28th June 2018 there were 1688 accredited laboratories
 
 
 class URLBuilder:
@@ -23,7 +26,7 @@ class URLBuilder:
     BASEURL_SUFFIX = ",podmiot.html"
 
     def __init__(self):
-        self.urls = (self.BASEURL_PREFIX + (str(i).zfill(3) if i < 1000 else str(i)) + self.BASEURL_SUFFIX for i in itertools.count())
+        self.urls = (self.BASEURL_PREFIX + (str(i).zfill(3) if i < 1000 else str(i)) + self.BASEURL_SUFFIX for i in itertools.count(1))
 
 
 class PageParser:
@@ -36,6 +39,8 @@ class PageParser:
 
     def __init__(self, number, url):
         self.number = "AB " + str(number).zfill(3)
+        time.sleep(0.05)
+        print("Creating #{} page parser...".format(str(number).zfill(4)))  # debug
         self.contents = requests.get(url).text
 
     def is_empty(self, line, pattern):
@@ -110,7 +115,11 @@ class PageParser:
                     return None
             elif "Data ważności certyfikatu:" in line:
                 expiredate_str = self.parse_expiredate(line, "Data ważności certyfikatu:")
-                if not self.validate_lab(expiredate_str):
+                try:
+                    if not self.validate_lab(expiredate_str):
+                        return None
+                except ValueError as ve:
+                    print(f"Cannot validate expire date (ValueError: {ve}). Skipping...")
                     return None
             elif "Akredytacja od:" in line:
                 certdate = self.parse_certdate(line, "Akredytacja od:")
@@ -200,3 +209,22 @@ class PageParser:
             "research_fields": research_fields,
             "research_objects": research_objects
         }
+
+
+def scrape():
+    """Scrape data of PCA accredited reasearch laboratories from PCA official website."""
+
+    builder = URLBuilder()
+    print("Parsing contents...")  # debug
+
+    labs = []
+    for n, url in zip(range(1, 1700), builder.urls):
+        parser = PageParser(n, url)
+        lab = parser.parse_contents()
+        if lab is not None:
+            labs.append(lab)
+
+    path = "data/scraped_data.json"
+    with open(path, mode="w") as outfile:
+        json.dump({"labs": labs}, outfile, ensure_ascii=False)
+        print(f"Data written to {path}")  # debug

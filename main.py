@@ -6,10 +6,12 @@
 
 """
 
+from pca.scraper import scrape
+
 
 def main():
     """Run the script."""
-    pass
+    scrape()
 
 
 if __name__ == "__main__":

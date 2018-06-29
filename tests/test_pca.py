@@ -24,7 +24,7 @@ class TestURLBuilder(unittest.TestCase):
         builder = URLBuilder()
         number = 7
         url = "https://www.pca.gov.pl/akredytowane-podmioty/akredytacje-aktywne/laboratoria-badawcze/AB%20007,podmiot.html"
-        self.assertEqual([url for url in itertools.islice(builder.urls, number, number + 1)][0], url)
+        self.assertEqual([url for url in itertools.islice(builder.urls, number - 1, number)][0], url)
 
     def test_url_with_arbitrary_threedigit_number(self):
         """
@@ -33,7 +33,7 @@ class TestURLBuilder(unittest.TestCase):
         builder = URLBuilder()
         number = 445
         url = "https://www.pca.gov.pl/akredytowane-podmioty/akredytacje-aktywne/laboratoria-badawcze/AB%20445,podmiot.html"
-        self.assertEqual([url for url in itertools.islice(builder.urls, number, number + 1)][0], url)
+        self.assertEqual([url for url in itertools.islice(builder.urls, number - 1, number)][0], url)
 
     def test_url_with_arbitrary_fourdigit_number(self):
         """
@@ -42,7 +42,7 @@ class TestURLBuilder(unittest.TestCase):
         builder = URLBuilder()
         number = 1578
         url = "https://www.pca.gov.pl/akredytowane-podmioty/akredytacje-aktywne/laboratoria-badawcze/AB%201578,podmiot.html"
-        self.assertEqual([url for url in itertools.islice(builder.urls, number, number + 1)][0], url)
+        self.assertEqual([url for url in itertools.islice(builder.urls, number - 1, number)][0], url)
 
 
 class TestPageParser(unittest.TestCase):
