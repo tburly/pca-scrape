@@ -3,7 +3,7 @@
     pca.to_csv
     ~~~~~~~~~~~~~
 
-    Convert scraped JSON data to other formats.
+    Convert scraped JSON data to CSV.
 
 """
 
@@ -39,6 +39,7 @@ def to_lst(labs):
     Translate lab data from dicts to lists and return it. Convert 'research_fields' and 'research_objects' lists to ' :: '-delimited strings.
     """
     delimiter = " :: "
-    return [[lab["number"], lab["certdate"], lab["org_name"], lab["org_address"], lab["lab_name"], lab["lab_address"], lab["phone"], lab["cellphone"], lab["email"], lab["www"],
+    return [[lab["number"], lab["certdate"], lab["org_name"], lab["org_address"], lab["lab_name"],
+             lab["lab_address"], lab["phone"], lab["cellphone"], lab["email"], lab["www"],
              delimiter.join([rf for rf in lab["research_fields"]]),
              delimiter.join([ro for ro in lab["research_objects"]])] for lab in labs]
