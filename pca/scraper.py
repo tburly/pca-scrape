@@ -13,14 +13,13 @@ import time
 import json
 import itertools
 import re
-from pprint import pprint as pp
 
 CEILING = 1700  # on 28th June 2018 there were 1688 accredited laboratories
 
 
 class URLBuilder:
 
-    """Generator of proper URLs for requests."""
+    """Generator of proper URLs for Requests."""
 
     BASEURL_PREFIX = "https://www.pca.gov.pl/akredytowane-podmioty/akredytacje-aktywne/laboratoria-badawcze/AB%20"
     BASEURL_SUFFIX = ",podmiot.html"
@@ -218,13 +217,13 @@ def scrape():
     print("Parsing contents...")  # debug
 
     labs = []
-    for n, url in zip(range(1, 1700), builder.urls):
+    for n, url in zip(range(1, CEILING), builder.urls):
         parser = PageParser(n, url)
         lab = parser.parse_contents()
         if lab is not None:
             labs.append(lab)
 
     path = "data/scraped_data.json"
-    with open(path, mode="w") as outfile:
+    with open(path, "w") as outfile:
         json.dump({"labs": labs}, outfile, ensure_ascii=False)
-        print(f"Data written to {path}")  # debug
+        print(f"Data written to: '{path}'")  # debug

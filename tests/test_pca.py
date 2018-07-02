@@ -280,3 +280,12 @@ class TestPageParser(unittest.TestCase):
             "research_objects": ["Wyroby i wyposażenie elektryczne, telekomunikacyjne i elektroniczne"]
         }
         self.assertEqual(parser.parse_contents(), expected)
+
+    def test_parse_contents_arbitrary_URL(self):
+        """Does parsing contents of an arbitrary page raise a ValueError?"""
+
+        url = "https://www.google.pl"
+        parser = PageParser(456, url)
+
+        with self.assertRaises(ValueError):
+            parser.parse_contents()
