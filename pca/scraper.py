@@ -10,9 +10,11 @@
 import requests
 import datetime
 import time
-import json
 import itertools
 import re
+
+from . import data
+
 
 CEILING = 1700  # on 28th June 2018 there were 1688 accredited laboratories
 
@@ -223,7 +225,4 @@ def scrape():
         if lab is not None:
             labs.append(lab)
 
-    path = "data/scraped_data.json"
-    with open(path, "w") as outfile:
-        json.dump({"labs": labs}, outfile, ensure_ascii=False)
-        print(f"Data written to: '{path}'")  # debug
+    data.to_json(labs)

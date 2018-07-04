@@ -6,12 +6,14 @@
 
 """
 
-from pca.to_csv import to_csv
+# from pca.data import to_csv
+from pca.data import to_xls
 
 
 def main():
     """Run the script."""
-    to_csv()
+    # to_csv()
+    to_xls()
 
 
 if __name__ == "__main__":
