@@ -218,11 +218,11 @@ def scrape():
     builder = URLBuilder()
     print("Parsing contents...")  # debug
 
-    labs = []
+    scraped_data = []
     for n, url in zip(range(1, CEILING), builder.urls):
         parser = PageParser(n, url)
         lab = parser.parse_contents()
         if lab is not None:
-            labs.append(lab)
+            scraped_data.append(lab)
 
-    data.to_json(labs)
+    return scraped_data

@@ -7,11 +7,12 @@
 """
 
 from pca.scraper import scrape
+from pca.data import to_json
 
 
 def main():
     """Run the script."""
-    scrape()
+    to_json(scrape())
 
 
 if __name__ == "__main__":
